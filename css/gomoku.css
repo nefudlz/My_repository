@@ -1,0 +1,28 @@
+.piece {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    position: absolute;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    /* 統一保留淡淡的立體陰影 */
+    box-shadow: 2px 2px 4px rgba(0,0,0,0.5); 
+}
+
+.piece.black {
+    background-color: #000000 !important;
+    background-image: none !important;
+    border: none !important;
+}
+
+.piece.white {
+    /* 核心魔法：將背景設為透明，徹底放棄 background-color */
+    background-color: transparent !important;
+    border: none !important;
+    
+    /* 用一張代碼生成的「純白圓形帶黑邊的 SVG 圖片」來當作棋子 */
+    /* 瀏覽器遇到 background-image 是圖片時，深色模式就會失效，乖乖顯示白色 */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='11' fill='%23ffffff' stroke='%23333333' stroke-width='1.5'/%3E%3C/svg%3E") !important;
+    background-size: 100% 100% !important;
+    background-repeat: no-repeat !important;
+}

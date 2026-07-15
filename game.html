@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>🏮 二十八弦古韻象棋</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div id="app">
+  <div class="board-wrap">
+    <div class="board" id="board">
+      <svg class="board-svg" xmlns="http://www.w3.org/2000/svg">
+        <rect x="45" y="50" width="400" height="450" fill="none" stroke="#7a4b26" stroke-width="3"/>
+        <g stroke="#7a4b26" stroke-width="1.5">
+          <line x1="45" y1="50" x2="445" y2="50" stroke-width="2.5" />
+          <line x1="45" y1="100" x2="445" y2="100" /><line x1="45" y1="150" x2="445" y2="150" /><line x1="45" y1="200" x2="445" y2="200" /><line x1="45" y1="250" x2="445" y2="250" /><line x1="45" y1="300" x2="445" y2="300" /><line x1="45" y1="350" x2="445" y2="350" /><line x1="45" y1="400" x2="445" y2="400" /><line x1="45" y1="450" x2="445" y2="450" />
+          <line x1="45" y1="500" x2="445" y2="500" stroke-width="2.5" />
+        </g>
+        <line x1="45" y1="50" x2="45" y2="500" stroke="#7a4b26" stroke-width="2.5" />
+        <line x1="445" y1="50" x2="445" y2="500" stroke="#7a4b26" stroke-width="2.5" />
+        <g stroke="#7a4b26" stroke-width="1.5">
+          <line x1="95" y1="50" x2="95" y2="250" /><line x1="145" y1="50" x2="145" y2="250" /><line x1="195" y1="50" x2="195" y2="250" /><line x1="245" y1="50" x2="245" y2="250" /><line x1="295" y1="50" x2="295" y2="250" /><line x1="345" y1="50" x2="345" y2="250" /><line x1="395" y1="50" x2="395" y2="250" />
+          <line x1="95" y1="300" x2="95" y2="500" /><line x1="145" y1="300" x2="145" y2="500" /><line x1="195" y1="300" x2="195" y2="500" /><line x1="245" y1="300" x2="245" y2="500" /><line x1="295" y1="300" x2="295" y2="500" /><line x1="345" y1="300" x2="345" y2="500" /><line x1="395" y1="300" x2="395" y2="500" />
+        </g>
+        <g stroke="#7a4b26" stroke-width="1.5">
+          <line x1="195" y1="50" x2="295" y2="150" /><line x1="295" y1="50" x2="195" y2="150" />
+          <line x1="195" y1="400" x2="295" y2="500" /><line x1="295" y1="400" x2="195" y2="500" />
+        </g>
+        <text x="110" y="285" font-size="24" fill="#7a4b26" font-family="'华文行楷','楷体',serif" font-weight="bold" transform="rotate(-90 124 279)">楚河</text>
+        <text x="345" y="272" font-size="24" fill="#7a4b26" font-family="'华文行楷','楷体',serif" font-weight="bold" transform="rotate(90 354 269)">漢界</text>
+      </svg>
+      <div id="cells-layer"></div>
+      <div id="pieces-layer"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>🏮 二十八弦古韻象棋</h2>
+    <div id="userInfo" style="font-weight:bold; color:#5a3516; margin-bottom:12px; font-size: 16px;">歡迎，未登入</div>
+    
+    <button class="btn btn-primary" style="background: linear-gradient(to bottom, #4a6b5d, #2e473d);" onclick="startPvE()">🤖 挑戰弈棋機關</button><br>
+    
+    <hr style="border:none;border-top:1px dashed #b58756;margin:12px 0;">
+    
+    <button class="btn btn-primary" onclick="createRoom()">創建對局房間</button><br>
+    <input type="text" id="roomInput" placeholder="輸入六位房間號" maxlength="6">
+    <button class="btn btn-secondary" onclick="joinRoom()">進入既有房間</button>
+    
+    <div style="display:flex; gap:10px; width:93%; margin: 8px auto 0 auto;">
+        <button class="btn" style="background:#fdfaf2; color:#5a3516; margin:0; flex:1; border:1px dashed #aa8055;" onclick="toggleFlip()">🔄 轉換視角</button>
+        <button class="btn" style="background:#fdfaf2; color:#5a3516; margin:0; flex:1; border:1px dashed #aa8055;" onclick="triggerUndo()">↩️ 請求悔棋</button>
+    </div>
+    
+    <div style="display:flex; gap:10px; width:93%; margin: 8px auto 0 auto;">
+        <button class="btn" style="background:#fdfaf2; color:#5a3516; margin:0; flex:1; border:1px dashed #aa8055;" onclick="sweepBoard()">✨ 拂局重弈</button>
+    </div>
+    
+    <div style="display:flex; gap:10px; width:93%; margin: 15px auto 0 auto;">
+        <button class="btn" style="background:#e8dfcb; color:#5a3516; margin:0; flex:1; border:1px solid #aa8055;" onclick="location.href='/'">返回主頁</button>
+        <button class="btn" style="background:#d9c5b2; color:#8f2223; margin:0; flex:1; border:1px solid #a4763b; font-weight:bold;" onclick="logout()">退出登錄</button>
+    </div>
+    
+    <hr style="border:none;border-top:1px dashed #b58756;margin:20px 0;">
+    <div id="roomInfo" style="font-size:18px;color:#8b4513;font-weight:bold; font-family:'KaiTi',serif">未進入房間</div>
+    <div id="turnInfo" style="color:#666;font-size:14px;margin-top:8px;font-family:'KaiTi',serif">請先登入後連線對戰</div>
+  </div>
+</div>
+
+<div id="authModal" class="modal-overlay" style="display: none;">
+  <div class="modal-box">
+    <h3>🏮 歡迎加入古韻象棋</h3>
+    <input type="text" id="authUsername" placeholder="輸入帳號">
+    <input type="password" id="authPassword" placeholder="輸入密碼">
+    <button class="btn btn-primary" onclick="handleAuth('login')">進入棋局（登入）</button>
+    <button class="btn btn-secondary" onclick="handleAuth('register')">註冊新帳號</button>
+    <button class="btn" style="margin-top: 10px; background: #e2d7c5; color: #5a3516;" onclick="location.href='/'">退回前廳</button>
+    <div id="authError" style="color:#b30000; font-size:14px; margin-top:10px; font-weight:bold;"></div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js_chess/rules.js"></script>
+<script src="/js_chess/ai.js"></script>
+<script src="/js_chess/main.js"></script>
+
+<script>
+    window.onload = () => {
+        buildClickGrid();
+        drawAllPieces();
+        if (!localStorage.getItem('chessToken')) {
+            document.getElementById('authModal').style.display = 'flex';
+        } else {
+            initSocketConnection();
+        }
+    };
+</script>
+</body>
+</html>

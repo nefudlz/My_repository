@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>🏮 二十八弦·古韻五子棋</title>
+    <link rel="stylesheet" href="/css/style.css?v=8">
+    <link rel="stylesheet" href="/css/gomoku.css?v=8">
+    <style>
+        .panel { margin-top: 20px; padding: 20px; background: rgba(253, 250, 242, 0.9); border-radius: 8px; border: 1px solid #aa8055; text-align: center; width: 450px; margin: 20px auto; font-family: "KaiTi", serif; box-sizing: border-box; }
+        .btn { padding: 8px 15px; margin: 5px; cursor: pointer; background: #e8dfcb; border: 1px solid #aa8055; color: #5a3516; }
+        .btn:hover { background: #d9c5b2; }
+        #roomStatus { font-size: 16px; color: #8f2223; margin: 10px 0; font-weight: bold; }
+    </style>
+</head>
+<body>
+<div id="app">
+  <div class="board-wrap" style="width: max-content; position: relative; margin: 50px auto;">
+    <div class="board" id="board" style="width: 450px; height: 450px; background: #dcb37b; position: relative; border: 2px solid #5a3516;">
+      <svg width="450" height="450" style="position: absolute; top:0; left:0;">
+        <g id="grid-layer" stroke="#5a3516" stroke-width="1"></g>
+      </svg>
+      <div id="pieces-layer" style="position: absolute; top:0; left:0; width:100%; height:100%; pointer-events: none;"></div>
+      <div id="cells-layer" style="position: absolute; top:0; left:0; width:100%; height:100%;">
+          <script>
+              for(let r=0; r<15; r++) {
+                  for(let c=0; c<15; c++) {
+                      document.write(`<div style="position:absolute; width:30px; height:30px; left:${15+c*30}px; top:${15+r*30}px; transform: translate(-50%, -50%); cursor:pointer; z-index: 5;" onclick="onGridCellClick(${r}, ${c})"></div>`);
+                  }
+              }
+          </script>
+      </div>
+    </div>
+  </div>
+  
+  <div class="panel">
+    <h2>🏮 五子棋對弈機關</h2>
+    <div id="userInfo" style="font-weight:bold; color:#5a3516; margin-bottom:12px; font-size: 16px;">歡迎，未登入</div>
+    
+    <button class="btn btn-primary" style="background: linear-gradient(to bottom, #4a6b5d, #2e473d);" onclick="startPvE()">🤖 挑戰對弈機關</button><br>
+    
+    <hr style="border:none;border-top:1px dashed #b58756;margin:12px 0;">
+    
+    <button class="btn btn-primary" onclick="createRoom()">創建對局房間</button><br>
+    <input type="text" id="roomInput" placeholder="輸入六位房間號" maxlength="6" style="padding: 10px; width: 85%; border: 1px solid #c8a985; background: #fffdfa; border-radius: 4px; font-size: 14px; color: #4a2e16; font-family: 'KaiTi', serif; box-sizing: border-box; margin: 10px 0;">
+    <button class="btn btn-secondary" onclick="joinRoom()">進入既有房間</button>
+    
+    <div style="display:flex; gap:10px; width:93%; margin: 8px auto 0 auto;">
+        <button class="btn" style="background:#fdfaf2; color:#5a3516; margin:0; flex:1; border:1px dashed #aa8055;" onclick="executeUndo()">↩️ 請求悔棋</button>
+        <button class="btn" style="background:#fdfaf2; color:#5a3516; margin:0; flex:1; border:1px dashed #aa8055;" onclick="sweepBoard()">✨ 拂局重弈</button>
+    </div>
+    
+    <div style="display:flex; gap:10px; width:93%; margin: 15px auto 0 auto;">
+        <button class="btn" style="background:#e8dfcb; color:#5a3516; margin:0; flex:1; border:1px solid #aa8055;" onclick="location.href='/'">返回主頁</button>
+        <button class="btn" style="background:#d9c5b2; color:#8f2223; margin:0; flex:1; border:1px solid #a4763b; font-weight:bold;" onclick="logout()">退出登錄</button>
+    </div>
+    
+    <hr style="border:none;border-top:1px dashed #b58756;margin:20px 0;">
+    <div id="roomStatus" style="font-size:18px;color:#8b4513;font-weight:bold; font-family:'KaiTi',serif">未進入房間</div>
+    <div id="turnInfo" style="color:#666;font-size:14px;margin-top:8px;font-family:'KaiTi',serif">請先登入後連線對戰</div>
+  </div>
+</div>
+
+<div id="authModal" class="modal-overlay" style="display: none;">
+  <div class="modal-box">
+    <h3>🏮 歡迎加入古韻五子棋</h3>
+    <input type="text" id="authUsername" placeholder="輸入帳號">
+    <input type="password" id="authPassword" placeholder="輸入密碼">
+    <button class="btn btn-primary" onclick="handleAuth('login')">進入棋局（登入）</button>
+    <button class="btn btn-secondary" onclick="handleAuth('register')">註冊新帳號</button>
+    <button class="btn" style="margin-top: 10px; background: #e2d7c5; color: #5a3516;" onclick="location.href='/'">退回前廳</button>
+    <div id="authError" style="color:#b30000; font-size:14px; margin-top:10px; font-weight:bold;"></div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js_gomoku/rules.js?v=8"></script>
+<script src="/js_gomoku/ai.js?v=8"></script>
+<script src="/js_gomoku/main.js?v=8"></script>
+
+<script>
+    window.onload = () => {
+        drawGrid();
+        if (!localStorage.getItem('chessToken')) {
+            document.getElementById('authModal').style.display = 'flex';
+        } else {
+            initSocketConnection();
+        }
+    };
+</script>
+</body>
+</html>

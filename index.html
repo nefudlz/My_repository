@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>🏮 二十八弦的弦音小居</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #0c0c0e; /* 極致深邃底色 */
+        }
+
+        /* 1. 底層動態壁紙： Ken Burns 效果（微微緩動） */
+        #dynamic-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 110vw;
+            height: 110vh;
+            background: url('/cabin.jpg') no-repeat center center;
+            background-size: cover;
+            z-index: 1;
+            filter: brightness(0.65); /* 降低背景亮度，烘托亮黑面板與流星光點 */
+            animation: kenBurns 60s ease-in-out infinite alternate;
+        }
+
+        @keyframes kenBurns {
+            0% { transform: scale(1); }
+            100% { transform: translate(-2%, -2%) scale(1.03); }
+        }
+
+        /* 2. 流星遺痕層 */
+        #meteor-trail-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .meteor-particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: #ffffff;
+            border-radius: 50%;
+            box-shadow: 0 0 14px 4px rgba(255, 255, 255, 0.95); /* 純白金流星餘暉 */
+            pointer-events: none;
+            animation: meteorFade 2s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+        }
+
+        @keyframes meteorFade {
+            0% { 
+                opacity: 1; 
+                transform: scale(1); 
+            }
+            10% {
+                opacity: 1;
+            }
+            100% { 
+                opacity: 0; 
+                transform: scale(3) translate(10px, 15px);
+            }
+        }
+
+        /* 3. 螢火氛圍層 */
+        #particles-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.3); /* 改為銀白色粒子，契合冷冽金屬風 */
+            border-radius: 50%;
+            box-shadow: 0 0 8px 1px rgba(255, 255, 255, 0.2);
+            animation: particleFloat 15s infinite ease-in-out, particleBreathe 3s infinite ease-in-out;
+            opacity: 0;
+        }
+
+        @keyframes particleFloat {
+            0% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: 0.6; }
+            50% { transform: translateY(-30vh) translateX(40px); opacity: 0.4; }
+            90% { opacity: 0.6; }
+            100% { transform: translateY(-60vh) translateX(-20px); opacity: 0; }
+        }
+        @keyframes particleBreathe {
+            0%, 100% { transform: scale(1); opacity: 0.4; }
+            50% { transform: scale(1.2); opacity: 0.6; }
+        }
+
+        /* 4. 高級金屬亮黑控制面板（精簡尺寸） */
+        .gateway-container {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            /* 核心：黑鈦金屬立體漸變與高反光邊緣夾條 */
+            background: linear-gradient(135deg, rgba(28, 28, 32, 0.88) 0%, rgba(14, 14, 16, 0.92) 100%);
+            padding: 35px 45px;
+            border-radius: 14px;
+            /* 雙層深邃陰影加上內部邊緣內發光（inset shadow），勾勒出金屬刀鋒外殼感 */
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px); /* 更高階的模糊 */
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            text-align: center;
+            max-width: 440px;
+            width: 85%;
+        }
+
+        /* 文字色彩全面升級為亮銀與白金 */
+        .gateway-title { 
+            font-family: "Long Cang", "华文行楷", serif; 
+            font-size: 40px; 
+            color: #f5f5f7; /* 蘋果級純淨冷銀 */
+            margin-bottom: 5px; 
+            text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+        }
+        .gateway-subtitle { 
+            font-family: "KaiTi", serif; 
+            font-size: 16px; 
+            color: #a1a1a6; /* 高級暗灰襯托 */
+            margin-bottom: 35px; 
+            letter-spacing: 3px; 
+        }
+        
+        .gateway-menu { width: 100%; display: flex; flex-direction: column; gap: 16px; }
+        
+        /* 按鈕改造為黑鈦合金質感 */
+        .gateway-btn { 
+            background: linear-gradient(135deg, #2c2c2e 0%, #1c1c1e 100%); 
+            border: 1px solid #48484a; 
+            color: #e5e5e7; /* 冷銀白 */
+            padding: 14px; 
+            border-radius: 6px; 
+            font-family: "Long Cang", "KaiTi", serif; 
+            font-size: 22px; 
+            cursor: pointer; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1); 
+        }
+        /* 懸停解鎖極光白金反光，科技感拉滿 */
+        .gateway-btn:hover { 
+            background: #f5f5f7; 
+            color: #1c1c1e; 
+            border-color: #ffffff; 
+            transform: translateY(-1px);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.35); 
+        }
+        
+        .gateway-user-badge { position: absolute; top: 15px; right: 20px; font-family: "KaiTi", serif; font-size: 14px; color: #aeaeae; }
+        .logout-link { color: #ff453a; cursor: pointer; border-bottom: 1px dashed #ff453a; margin-left: 5px; }
+
+        .diary-box { text-align: left; font-family: "KaiTi", serif; color: #e5e5e7; line-height: 1.8; font-size: 16px; max-height: 380px; overflow-y: auto; }
+        .diary-p { text-indent: 2em; margin-bottom: 15px; }
+        
+        .diary-footer { margin-top: 25px; border-top: 1px dashed #48484a; padding-top: 15px; text-align: right; font-size: 14px; color: #a1a1a6; width: 100%; }
+        .qq-link { color: #ff453a; font-weight: bold; text-decoration: none; border-bottom: 1px solid #ff453a; }
+    </style>
+</head>
+<body>
+
+<div id="dynamic-bg"></div>
+<div id="meteor-trail-container"></div>
+<div id="particles-container"></div>
+
+<div id="gatewaySection" class="gateway-container">
+    <div class="gateway-user-badge" id="gatewayUserBadge">臨兵對弈，虛左以待</div>
+    <div class="gateway-title">二十八弦的弦音小居</div>
+    <div class="gateway-subtitle">「二十八弦外，再無此弦音」</div>
+    <div class="gateway-menu">
+        <button class="gateway-btn" onclick="location.href='/game.html'">🏮 棋坊 ． 對局中國象棋</button>
+        <button class="gateway-btn" onclick="location.href='/gomoku.html'">🏮 棋坊 ． 對局五子棋</button>
+        <button class="gateway-btn" onclick="showDiary(true)">📜 日誌 ． 尚未完成的事</button>
+    </div>
+</div>
+
+<div id="diarySection" class="gateway-container" style="display: none;">
+    <div class="gateway-title" style="font-size: 32px; margin-bottom: 20px; color: #f5f5f7;">尚未完成的事</div>
+    <div class="diary-box" id="diaryContentBox">正在展開日誌...</div>
+    <div class="diary-footer">
+        <span>二十八弦 筆留於此</span><br>
+        <span>青鳥傳書 QQ：<a class="qq-link" href="tencent://AddContact/?fromId=45&fromSubId=1&subcmd=all&uin=3585828055">3585828055</a></span>
+    </div>
+    <button class="gateway-btn" style="width: 100%; margin-top: 20px; font-size: 18px; padding: 10px;" onclick="showDiary(false)">返回前廳</button>
+</div>
+
+<script>
+    const trailContainer = document.getElementById('meteor-trail-container');
+    
+    let lastX = 0;
+    let lastY = 0;
+    const DISTANCE_THRESHOLD = 8; 
+
+    document.addEventListener('mousemove', (e) => {
+        if (!trailContainer) return;
+        
+        const currentX = e.clientX;
+        const currentY = e.clientY;
+        const dist = Math.sqrt(Math.pow(currentX - lastX, 2) + Math.pow(currentY - lastY, 2));
+        
+        if (dist > DISTANCE_THRESHOLD) {
+            createMeteorParticle(currentX, currentY);
+            lastX = currentX;
+            lastY = currentY;
+        }
+    });
+
+    function createMeteorParticle(x, y) {
+        const particle = document.createElement('div');
+        particle.className = 'meteor-particle';
+        particle.style.left = (x - 1.5) + 'px';
+        particle.style.top = (y - 1.5) + 'px';
+        
+        trailContainer.appendChild(particle);
+        
+        particle.addEventListener('animationend', () => {
+            particle.remove();
+        });
+    }
+
+    function initParticles() {
+        const container = document.getElementById('particles-container');
+        if (!container) return;
+        const particleCount = 20; 
+
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            const size = Math.random() * 3 + 2; 
+            particle.style.width = size + 'px';
+            particle.style.height = size + 'px';
+            particle.style.left = Math.random() * 100 + 'vw';
+            particle.style.top = Math.random() * 100 + 'vh';
+            
+            particle.style.animationDelay = Math.random() * 10 + 's';
+            particle.style.animationDuration = Math.random() * 20 + 10 + 's, ' + (Math.random() * 2 + 2) + 's';
+
+            container.appendChild(particle);
+        }
+    }
+
+    function updateBadge() {
+        const badge = document.getElementById('gatewayUserBadge');
+        const username = localStorage.getItem('chessUser');
+        badge.innerHTML = username ? `<span>【 棋客 】${username}</span> <a class="logout-link" onclick="localStorage.clear();location.reload();">[ 退出 ]</a>` : `<span>臨兵對弈，虛左以待</span>`;
+    }
+    function showDiary(isShowing) {
+        document.getElementById('gatewaySection').style.display = isShowing ? 'none' : 'flex';
+        document.getElementById('diarySection').style.display = isShowing ? 'flex' : 'none';
+        if(isShowing) loadTxt();
+    }
+    async function loadTxt() {
+        const box = document.getElementById('diaryContentBox');
+        try {
+            const res = await fetch(`/message.txt?_=${Date.now()}`);
+            const text = await res.text();
+            box.innerHTML = text.split(/\n\s*\n/).filter(t => t.trim() && !t.startsWith('#')).map(t => `<div class="diary-p">${t.trim()}</div>`).join('');
+        } catch(e) { box.innerHTML = "📜 弦音受阻，未能尋得手札。"; }
+    }
+
+    window.onload = () => {
+        updateBadge();
+        initParticles(); 
+    };
+</script>
+</body>
+</html>

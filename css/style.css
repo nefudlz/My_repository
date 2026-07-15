@@ -1,0 +1,205 @@
+/* @import 引入開源的線上毛筆書法與古典襯線字體，確保跨平台視覺一致 */
+@import url('https://fonts.googleapis.com/css2?family=Long+Cang&family=Noto+Serif+TC:wght@500;700&display=swap');
+
+body {
+    background-color: #f2ebd9;
+    background-image: radial-gradient(#fcf8ed 20%, transparent 20%), radial-gradient(#faf3e3 20%, transparent 20%);
+    background-size: 4px 4px;
+    background-position: 0 0, 2px 2px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    /* 全局指定為典雅的國風毛筆字與繁體襯線體 */
+    font-family: "Long Cang", "华文行楷", "KaiTi", "Noto Serif TC", serif;
+}
+
+#app {
+    display: flex;
+    gap: 40px;
+    align-items: center;
+    background: rgba(253, 250, 242, 0.6);
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(40, 25, 10, 0.15);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(139, 69, 19, 0.15);
+}
+
+.board-wrap {
+    background: #c69c6d;
+    background-image: linear-gradient(135deg, #d8b285 0%, #b58756 50%, #9e6f3d 100%);
+    border: 12px solid #5a3516;
+    border-radius: 8px;
+    padding: 25px;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.4), 0 15px 35px rgba(0,0,0,0.3);
+}
+
+.board {
+    position: relative;
+    width: 500px;
+    height: 560px;
+    background: #f1e2c3;
+    background-image: linear-gradient(to right, rgba(139,69,19,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(139,69,19,0.03) 1px, transparent 1px);
+    background-size: 20px 20px;
+    box-shadow: inset 0 0 30px rgba(139,69,19,0.2);
+    border: 2px solid #7a4b26;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.board.flipped {
+    transform: rotate(180deg);
+}
+
+.board-svg {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 1;
+}
+
+/* 🪵 棋子外觀與書法字體 */
+.piece {
+    position: absolute;
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 25px;
+    font-weight: 500;
+    font-family: "华文隶书", "KaiTi", "Noto Serif TC", serif;
+    cursor: pointer; z-index: 3;
+    transform: translate(-50%, -50%);
+    user-select: none;
+    transition: left 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+                top 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.board.flipped .piece {
+    transform: translate(-50%, -50%) rotate(180deg);
+}
+
+.piece.red {
+    color: #a31d1d;
+    text-shadow: 1px 1px 1px rgba(255,255,255,0.7), -1px -1px 1px rgba(0,0,0,0.3);
+    background: radial-gradient(circle at 35% 35%, #ffeacc 0%, #f1c58f 60%, #c49557 100%);
+    border: 1px solid #9e723b;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.35), inset 0 -3px 4px rgba(0,0,0,0.15), inset 0 3px 4px rgba(255,255,255,0.5);
+}
+
+.piece.black {
+    color: #f0fdf4;
+    text-shadow: -1px -1px 1px rgba(0,0,0,0.8), 1px 1px 1px rgba(255,255,255,0.1);
+    background: radial-gradient(circle at 35% 35%, #4a4a4a 0%, #242424 50%, #0d0d0d 100%);
+    border: 1px solid #000;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4), inset 0 -3px 4px rgba(0,0,0,0.6), inset 0 3px 4px rgba(255,255,255,0.15);
+}
+
+.piece.selected {
+    outline: none;
+    box-shadow: 0 0 25px #e67e22, 0 8px 15px rgba(0,0,0,0.4);
+    transform: translate(-50%, -56%) scale(1.08);
+    z-index: 10;
+}
+
+.board.flipped .piece.selected {
+    transform: translate(-50%, -44%) scale(1.08) rotate(180deg);
+    box-shadow: 0 0 25px #e67e22, 0 -8px 15px rgba(0,0,0,0.4); 
+}
+
+.click-cell {
+    position: absolute;
+    width: 46px; height: 46px;
+    transform: translate(-50%, -50%);
+    z-index: 2; cursor: pointer; border-radius: 50%;
+}
+
+.click-cell.guide::after {
+    content: '';
+    position: absolute; top: 50%; left: 50%; width: 12px; height: 12px;
+    background: radial-gradient(circle, #3d6840 40%, transparent 80%);
+    border-radius: 50%; transform: translate(-50%, -50%);
+    box-shadow: 0 0 6px #3d6840;
+    animation: pulse 1.8s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.5; }
+    50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.9; }
+    100% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.5; }
+}
+
+/* 📜 右側古風書卷控制面板 */
+.panel {
+    background: #fdfaf2; 
+    border: 1px solid #aa8055; 
+    padding: 30px 25px;
+    border-radius: 6px; min-width: 240px; text-align: center;
+    box-shadow: 5px 10px 25px rgba(40, 25, 10, 0.08);
+    background-image: linear-gradient(rgba(139,69,19,0.01) 1px, transparent 1px);
+    background-size: 100% 24px;
+}
+
+.panel h2 {
+    font-family: "Long Cang", "华文行楷", serif; 
+    font-size: 34px; 
+    color: #4a2e16;
+    margin-top: 0; margin-bottom: 20px; 
+    border-bottom: 1px dashed #aa8055; 
+    padding-bottom: 10px;
+    font-weight: normal;
+}
+
+.panel input {
+    width: 85%; padding: 10px; margin: 10px 0;
+    border: 1px solid #c8a985; background: #fffdfa; border-radius: 4px;
+    font-size: 14px; color: #4a2e16;
+    font-family: "KaiTi", serif;
+}
+
+.btn {
+    width: 93%; padding: 11px; margin: 8px 0; border: 1px solid #6e411b;
+    border-radius: 4px; cursor: pointer; font-size: 15px;
+    font-family: "KaiTi", "Noto Serif TC", sans-serif; 
+    transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-primary { 
+    background: linear-gradient(to bottom, #8f2223, #6b1415); 
+    color: #fdfaf2; 
+}
+
+.btn-secondary { 
+    background: linear-gradient(to bottom, #4f5d5b, #384240); 
+    color: #fdfaf2; 
+}
+
+.btn:hover { 
+    transform: translateY(-1px); 
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15); 
+    filter: brightness(1.08); 
+}
+
+/* 👥 登入彈出遮罩 */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(30, 20, 10, 0.75); display: flex; justify-content: center; align-items: center; z-index: 100; backdrop-filter: blur(4px);
+}
+
+.modal-box {
+    background: #fdfaf2; border: 2px solid #5a3516; padding: 35px; border-radius: 8px; width: 320px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+}
+
+.modal-box h3 { 
+    font-family: "Long Cang", "华文行楷", serif; 
+    font-size: 28px; 
+    color: #4a2e16; 
+    margin-top: 0;
+    font-weight: normal;
+}
+
+.modal-box input { 
+    width: 90%; padding: 11px; margin: 12px 0; 
+    border: 1px solid #c8a985; background: #fffdfa; border-radius: 4px; 
+    font-family: "KaiTi", serif;
+}
