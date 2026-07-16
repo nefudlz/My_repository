@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- 背景：圓角矩形，採用深邃的古風紅木色 -->
+  <rect width="512" height="512" rx="120" fill="#4a2c20"/>
+  
+  <!-- 外框：金色細線 -->
+  <rect x="25" y="25" width="462" height="462" rx="95" fill="none" stroke="#d4af37" stroke-width="10" opacity="0.8"/>
+  
+  <!-- 弦：代表二十八弦的意境與棋盤的經緯 -->
+  <g stroke="#d4af37" stroke-width="4" opacity="0.4">
+    <line x1="80" y1="130" x2="432" y2="130"/>
+    <line x1="80" y1="210" x2="432" y2="210"/>
+    <line x1="80" y1="290" x2="432" y2="290"/>
+    <line x1="80" y1="370" x2="432" y2="370"/>
+  </g>
+
+  <!-- 主視覺：28 -->
+  <text x="256" y="325" font-family="'Times New Roman', serif" font-size="220" font-weight="bold" fill="#fdfaf2" text-anchor="middle" letter-spacing="5">28</text>
+  
+  <!-- 副標題：STRINGS -->
+  <text x="256" y="430" font-family="sans-serif" font-size="45" font-weight="bold" fill="#d4af37" text-anchor="middle" letter-spacing="18">STRINGS</text>
+</svg>

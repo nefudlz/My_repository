@@ -1,4 +1,23 @@
 // /var/www/html/js_chess/main.js
+
+// ================= 動態注入高光 CSS =================
+const style = document.createElement('style');
+style.innerHTML = `
+    .click-cell.last-move {
+        background-color: rgba(139, 69, 19, 0.4);
+        border-radius: 50%;
+        box-shadow: inset 0 0 10px rgba(139, 69, 19, 0.5);
+    }
+    /* 給最後一步的棋子加上金色外發光，解決被遮擋的問題 */
+    .piece.last-move-piece {
+        box-shadow: 0 0 15px 5px rgba(255, 215, 0, 0.9) !important;
+        border: 2px solid #ffd700 !important;
+        z-index: 100;
+    }
+`;
+document.head.appendChild(style);
+// ====================================================
+
 let socket;
 let currentBoard = JSON.parse(JSON.stringify(INIT_BOARD));
 let selectedPiece = null;
@@ -7,11 +26,12 @@ let currentTurn = 'red';
 let roomId = null;
 let isFlipped = false;
 let historyStack = []; 
+let lastMove = null;
+let isGameOver = false; // 💡 全域遊戲結束狀態鎖
 
 let isPvEMode = false;
 let aiCamp = 'b'; 
 
-// ================= 悔棋 UI 彈窗控制 =================
 function showUndoPrompt() {
     let promptBox = document.getElementById('undoPromptBox');
     if (!promptBox) {
@@ -48,7 +68,6 @@ window.respondUndo = function(agreed) {
         socket.emit('undoResponse', { roomId, agreed });
     }
 };
-// ====================================================
 
 async function handleAuth(type) {
     const user = document.getElementById('authUsername').value.trim();
@@ -95,14 +114,25 @@ function initSocketConnection() {
 
     socket = io({ auth: { token: token } });
 
+    socket.on('connect', () => {
+        const savedRoomId = localStorage.getItem('chessRoomId');
+        if (savedRoomId) {
+            socket.emit('joinRoom', { roomId: savedRoomId });
+        }
+    });
+
     socket.on('roomCreated', (data) => {
         isPvEMode = false; 
+        isGameOver = false; // 重置狀態
         roomId = data.roomId;
         myColor = data.color;
         currentTurn = 'red';
         currentBoard = JSON.parse(JSON.stringify(INIT_BOARD));
         selectedPiece = null;
         historyStack = []; 
+        lastMove = null;
+        localStorage.setItem('chessRoomId', roomId); 
+
         document.getElementById('roomInfo').textContent = '〔 局號 〕 ' + data.roomId;
         document.getElementById('roomInput').value = data.roomId;
         
@@ -114,12 +144,16 @@ function initSocketConnection() {
 
     socket.on('roomJoined', (data) => {
         isPvEMode = false;
+        isGameOver = false; // 重置狀態
         roomId = data.roomId;
         myColor = data.color;
         currentTurn = 'red';
         currentBoard = JSON.parse(JSON.stringify(INIT_BOARD));
         selectedPiece = null;
         historyStack = []; 
+        lastMove = null;
+        localStorage.setItem('chessRoomId', roomId); 
+
         document.getElementById('roomInfo').textContent = '〔 局號 〕 ' + data.roomId;
         
         if (myColor === 'black' && !isFlipped) toggleFlip();
@@ -136,15 +170,23 @@ function initSocketConnection() {
     socket.on('boardUpdate', (data) => {
         currentBoard = data.board;
         currentTurn = data.currentTurn;
+        lastMove = data.lastMove || null;
+        isGameOver = data.isGameOver || false; // 接收對手的絕殺判定
         selectedPiece = null;
         drawAllPieces();
+
+        if (isGameOver) {
+            setTimeout(() => {
+                const winnerText = currentTurn === 'black' ? "紅方" : "黑方";
+                showToast(`🎉 絕殺！恭喜 ${winnerText} 獲勝！`, 5000);
+            }, 100);
+        }
     });
 
     socket.on('opponentDisconnected', (data) => {
         document.getElementById('turnInfo').innerHTML = `<span style="color:#b30000;">〔 弈友暫離 〕 對手 [${data.name}] 斷開連線，靜候歸步...</span>`;
     });
 
-    // --- 悔棋相關的 Socket 事件 ---
     socket.on('undoRequested', () => { showUndoPrompt(); });
     
     socket.on('undoTimeout', () => { 
@@ -152,11 +194,17 @@ function initSocketConnection() {
         showToast("⏳ 悔棋請求已超時"); 
     });
 
-    socket.on('undoAgreed', () => { executeUndo(); });
+    socket.on('undoSuccess', (msg) => { 
+        showToast(msg); 
+        isGameOver = false; // 悔棋後解除鎖定
+    });
 
     socket.on('undoRejected', (msg) => { showToast(msg || "❌ 對手拒絕了你的悔棋請求。"); });
 
-    socket.on('gameEnded', (msg) => { showToast(msg); });
+    socket.on('gameEnded', (msg) => { 
+        showToast(msg);
+        localStorage.removeItem('chessRoomId'); 
+    });
 
     socket.on('error', (msg) => { showToast(msg); });
 }
@@ -168,6 +216,7 @@ function logout() {
 
 function startPvE() {
     isPvEMode = true;
+    isGameOver = false; // 重置狀態
     roomId = null;
     myColor = 'red'; 
     aiCamp = 'b';
@@ -175,6 +224,9 @@ function startPvE() {
     currentBoard = JSON.parse(JSON.stringify(INIT_BOARD));
     selectedPiece = null;
     historyStack = [];
+    lastMove = null;
+    localStorage.removeItem('chessRoomId'); 
+
     document.getElementById('roomInfo').textContent = '〔 機關對弈 〕';
     document.getElementById('roomInput').value = '';
     if (isFlipped) toggleFlip(); 
@@ -201,7 +253,17 @@ function buildClickGrid() {
 function drawAllPieces() {
     const piecesLayer = document.getElementById('pieces-layer');
     piecesLayer.innerHTML = '';
-    document.querySelectorAll('.click-cell').forEach(el => el.classList.remove('guide'));
+    
+    document.querySelectorAll('.click-cell').forEach(el => {
+        el.classList.remove('guide', 'last-move');
+    });
+
+    if (lastMove && lastMove.from && lastMove.to) {
+        const fromCell = document.getElementById(`cell-${lastMove.from.r}-${lastMove.from.c}`);
+        const toCell = document.getElementById(`cell-${lastMove.to.r}-${lastMove.to.c}`);
+        if (fromCell) fromCell.classList.add('last-move');
+        if (toCell) toCell.classList.add('last-move');
+    }
 
     for (let r = 0; r < 10; r++) {
         for (let c = 0; c < 9; c++) {
@@ -210,6 +272,11 @@ function drawAllPieces() {
             const role = token[0], camp = token[1];
             const pDiv = document.createElement('div');
             pDiv.className = `piece ${camp === 'r' ? 'red' : 'black'}`;
+            
+            if (lastMove && lastMove.to && lastMove.to.r === r && lastMove.to.c === c) {
+                pDiv.classList.add('last-move-piece');
+            }
+
             pDiv.innerText = CN[camp][role];
             pDiv.style.left = `${45 + c * 50}px`;
             pDiv.style.top = `${50 + r * 50}px`;
@@ -243,6 +310,7 @@ function activateMovementGuides() {
 }
 
 function onPieceElementClick(r, c) {
+    if (isGameOver) return showToast("📜 棋局已結束，請拂局重弈！"); // 防護鎖
     if (isPvEMode && currentTurn === (aiCamp === 'b' ? 'black' : 'red')) return;
     if (!isPvEMode && roomId && myColor && currentTurn !== myColor) return;
 
@@ -267,6 +335,7 @@ function onPieceElementClick(r, c) {
 }
 
 function onGridCellClick(r, c) {
+    if (isGameOver) return showToast("📜 棋局已結束，請拂局重弈！"); // 防護鎖
     if (isPvEMode && currentTurn === (aiCamp === 'b' ? 'black' : 'red')) return;
     if (!isPvEMode && roomId && myColor && currentTurn !== myColor) return;
 
@@ -316,7 +385,8 @@ function performMoveAction(fromR, fromC, toR, toC) {
 
     historyStack.push({
         board: JSON.parse(JSON.stringify(currentBoard)),
-        turn: currentTurn
+        turn: currentTurn,
+        lastMove: lastMove ? JSON.parse(JSON.stringify(lastMove)) : null
     });
 
     let captureMsg = "";
@@ -328,10 +398,20 @@ function performMoveAction(fromR, fromC, toR, toC) {
     currentBoard = tempBoard;
     currentTurn = currentTurn === 'red' ? 'black' : 'red';
     selectedPiece = null;
+    lastMove = { from: { r: fromR, c: fromC }, to: { r: toR, c: toC } };
+    
     drawAllPieces();
 
+    // 判斷絕殺與遊戲結束
     const nextCamp = currentTurn === 'red' ? 'r' : 'b';
+    let isWinningMove = false;
+
     if (isCheckmate(currentBoard, nextCamp)) {
+        // 💡 只有在「聯機對弈」的情況下才鎖定棋盤。自己擺棋（無 roomId）或與 AI 對戰（isPvEMode 為 true）時不會觸發 isGameOver，可以繼續自由探索。
+        if (!isPvEMode && roomId) {
+            isGameOver = true;
+            isWinningMove = true;
+        }
         showToast(captureMsg + "🏮 絕殺！無解！", 5000);
     } else if (isCheck(currentBoard, nextCamp)) {
         showToast(captureMsg + "⚠️ 將軍！");
@@ -339,11 +419,17 @@ function performMoveAction(fromR, fromC, toR, toC) {
         showToast(captureMsg); 
     }
 
+    // 將 isGameOver 狀態一併發送給伺服器
     if (!isPvEMode && socket && socket.connected && roomId) {
-        socket.emit('move', { roomId: roomId, from: {r: fromR, c: fromC}, to: {r: toR, c: toC} });
+        socket.emit('move', { 
+            roomId: roomId, 
+            from: {r: fromR, c: fromC}, 
+            to: {r: toR, c: toC},
+            isGameOver: isWinningMove
+        });
     }
 
-    if (isPvEMode && currentTurn === (aiCamp === 'b' ? 'black' : 'red') && !isCheckmate(currentBoard, nextCamp)) {
+    if (isPvEMode && currentTurn === (aiCamp === 'b' ? 'black' : 'red') && !isGameOver) {
         document.getElementById('turnInfo').innerHTML = '<span style="color:#2b2b2b;">機關思考中...</span>';
         setTimeout(() => {
             const aiMove = getBestAIMove(currentBoard, aiCamp);
@@ -357,25 +443,23 @@ function performMoveAction(fromR, fromC, toR, toC) {
 }
 
 function executeUndo() {
+    if (!isPvEMode) return;
+
     if (historyStack.length === 0) {
         showToast("📜 已至開局，無棋可悔。");
         return;
     }
     
-    if (isPvEMode) {
-        if (historyStack.length >= 2) {
-            historyStack.pop(); 
-            const lastState = historyStack.pop(); 
-            currentBoard = lastState.board;
-            currentTurn = lastState.turn;
-        } else {
-            showToast("📜 無法悔棋。");
-            return;
-        }
-    } else {
-        const lastState = historyStack.pop();
+    if (historyStack.length >= 2) {
+        historyStack.pop(); 
+        const lastState = historyStack.pop(); 
         currentBoard = lastState.board;
         currentTurn = lastState.turn;
+        lastMove = lastState.lastMove || null;
+        isGameOver = false; // 悔棋後解除鎖定
+    } else {
+        showToast("📜 無法悔棋。");
+        return;
     }
 
     selectedPiece = null;
@@ -393,13 +477,16 @@ function triggerUndo() {
 }
 
 function sweepBoard() {
+    localStorage.removeItem('chessRoomId'); 
     roomId = null;
     isPvEMode = false;
+    isGameOver = false; // 重置狀態
     myColor = null;
     currentTurn = 'red';
     currentBoard = JSON.parse(JSON.stringify(INIT_BOARD));
     selectedPiece = null;
     historyStack = [];
+    lastMove = null;
     isFlipped = false;
     
     const boardEl = document.getElementById('board');

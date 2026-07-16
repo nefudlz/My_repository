@@ -1,4 +1,17 @@
 // /var/www/html/js_gomoku/main.js
+
+// ================= 動態注入高光 CSS =================
+const style = document.createElement('style');
+style.innerHTML = `
+    .stone.last-move-stone {
+        box-shadow: 0 0 12px 4px rgba(255, 69, 0, 0.8) !important;
+        border: 2px solid #ff4500 !important;
+        z-index: 100;
+    }
+`;
+document.head.appendChild(style);
+// ====================================================
+
 let currentBoard = Array(15).fill(null).map(() => Array(15).fill(null));
 let currentTurn = 'black'; 
 let isPvEMode = false;
@@ -7,6 +20,7 @@ let roomId = null;
 let myColor = null; 
 let historyStack = [];
 let isGameOver = false;
+let lastMove = null; // 新增全域變數記錄最後一步
 
 // ================= 悔棋 UI 彈窗控制 =================
 function showUndoPrompt() {
@@ -109,8 +123,26 @@ function initSocketConnection() {
 
     socket = io({ auth: { token: token } });
 
-    socket.on('move', (data) => {
-        performMoveAction(data.r, data.c, true);
+    // 修改：改為監聽 boardUpdate 以保持與後端狀態一致
+    socket.on('boardUpdate', (data) => {
+        currentBoard = data.board;
+        currentTurn = data.currentTurn;
+        lastMove = data.lastMove || null;
+        isGameOver = data.isGameOver || false;
+        
+        drawAllPieces(); // 先畫棋盤與高光
+        
+        // 延遲判斷勝負，避免阻擋畫面繪製
+        setTimeout(() => {
+            const turnText = currentTurn === 'black' ? "黑方" : "白方";
+            document.getElementById('turnInfo').innerText = "當前回合：" + turnText;
+            
+            if (isGameOver) {
+                const winnerText = currentTurn === 'white' ? "黑方" : "白方"; // 因為贏的當下已經換邊，所以反推
+                showToast(`🎉 絕殺！恭喜 ${winnerText} 獲勝！`, 5000);
+                document.getElementById('turnInfo').innerHTML = `<span style="color:#a31d1d;">【 ${winnerText} 勝出 】</span>`;
+            }
+        }, 100);
     });
 
     // --- 悔棋相關的 Socket 事件 ---
@@ -121,15 +153,10 @@ function initSocketConnection() {
         showToast("⏳ 悔棋請求已超時"); 
     });
 
-    socket.on('undoAgreed', () => {
-        if (historyStack.length < 2) return;
-        historyStack.pop();
-        const lastState = historyStack.pop();
-        currentBoard = lastState.board;
-        currentTurn = lastState.turn;
-        isGameOver = false; 
-        drawAllPieces();
-        document.getElementById('turnInfo').innerText = "當前回合：" + (currentTurn === 'black' ? "黑方" : "白方");
+    // 由伺服器透過 boardUpdate 處理，前端只需顯示成功訊息
+    socket.on('undoSuccess', (msg) => { 
+        showToast(msg); 
+        isGameOver = false; // 悔棋成功後解鎖棋局
     });
 
     socket.on('undoRejected', (msg) => { showToast(msg || "❌ 對手拒絕了你的悔棋請求。"); });
@@ -160,13 +187,19 @@ function drawAllPieces() {
     const layer = document.getElementById('pieces-layer');
     if (!layer) return;
     layer.innerHTML = '';
+    
     currentBoard.forEach((row, r) => {
         row.forEach((cell, c) => {
             if (cell) {
                 const p = document.createElement('div');
-                p.className = 'piece ' + cell;
+                p.className = 'piece ' + cell; // 這裡你的 CSS 應該處理了 black 或 white
                 p.style.left = (15 + c * 30) + 'px';
                 p.style.top = (15 + r * 30) + 'px';
+                
+                // 加入高光判斷
+                if (lastMove && lastMove.r === r && lastMove.c === c) {
+                    p.classList.add('last-move-stone');
+                }
                 layer.appendChild(p);
             }
         });
@@ -191,60 +224,77 @@ function onGridCellClick(r, c) {
 function performMoveAction(r, c, isRemote = false) {
     historyStack.push({
         board: JSON.parse(JSON.stringify(currentBoard)),
-        turn: currentTurn
+        turn: currentTurn,
+        lastMove: lastMove ? JSON.parse(JSON.stringify(lastMove)) : null // 單機悔棋用
     });
     
     currentBoard[r][c] = currentTurn;
-    drawAllPieces();
-
+    lastMove = { r: r, c: c };
+    
+    // 判斷勝負 (先不直接 return，確保流程走完)
+    let isWinningMove = false;
     if (typeof checkGomokuWin === 'function' && checkGomokuWin(currentBoard, r, c, currentTurn)) {
-        isGameOver = true;
-        const winnerText = currentTurn === 'black' ? "黑方" : "白方";
-        showToast(`🎉 絕殺！恭喜 ${winnerText} 獲勝！`, 5000);
-        document.getElementById('turnInfo').innerHTML = `<span style="color:#a31d1d;">【 ${winnerText} 勝出 】</span>`;
-        return; 
+        isWinningMove = true;
     }
 
     currentTurn = (currentTurn === 'black' ? 'white' : 'black');
-    const turnText = currentTurn === 'black' ? "黑方" : "白方";
-    document.getElementById('turnInfo').innerText = "當前回合：" + turnText;
     
+    // 聯機模式：發送資料給伺服器 (包含勝負狀態)
     if (!isRemote && roomId && !isPvEMode) {
-        socket.emit('move', { roomId, r, c });
+        socket.emit('move', { roomId, r, c, isGameOver: isWinningMove });
     }
     
-    if (isPvEMode && currentTurn === 'white' && !isGameOver) {
-        document.getElementById('turnInfo').innerText = "機關思考中...";
-        setTimeout(() => {
-            if (typeof getBestGomokuMove === 'function') {
-                const move = getBestGomokuMove(currentBoard, 'white');
-                if (move) performMoveAction(move.r, move.c);
-            }
-        }, 500);
+    // 如果是單機或機關模式，直接在前端處理後續
+    if (!roomId || isPvEMode) {
+        drawAllPieces();
+        const turnText = currentTurn === 'black' ? "黑方" : "白方";
+        document.getElementById('turnInfo').innerText = "當前回合：" + turnText;
+        
+        if (isWinningMove) {
+            isGameOver = true;
+            const winnerText = currentTurn === 'white' ? "黑方" : "白方"; // 因為上面換過回合了
+            setTimeout(() => {
+                showToast(`🎉 絕殺！恭喜 ${winnerText} 獲勝！`, 5000);
+                document.getElementById('turnInfo').innerHTML = `<span style="color:#a31d1d;">【 ${winnerText} 勝出 】</span>`;
+            }, 100);
+            return;
+        }
+
+        if (isPvEMode && currentTurn === 'white' && !isGameOver) {
+            document.getElementById('turnInfo').innerText = "機關思考中...";
+            setTimeout(() => {
+                if (typeof getBestGomokuMove === 'function') {
+                    const move = getBestGomokuMove(currentBoard, 'white');
+                    if (move) performMoveAction(move.r, move.c);
+                }
+            }, 500);
+        }
     }
 }
 
 function executeUndo() {
-    if (isGameOver) {
-        return showToast("📜 勝負已分，無法悔棋。");
-    }
     if (!isPvEMode && roomId) {
         socket.emit('requestUndo', { roomId });
         showToast("⏳ 已發送悔棋請求，等待對方同意...");
         return;
     }
+    // 單機或 PVE 模式悔棋邏輯
     if (isPvEMode) {
         if (historyStack.length < 2) return showToast("📜 已至開局，無棋可悔。");
         historyStack.pop(); 
         const lastState = historyStack.pop(); 
         currentBoard = lastState.board;
         currentTurn = lastState.turn;
+        lastMove = lastState.lastMove || null;
     } else {
         if (historyStack.length < 1) return showToast("📜 已至開局，無棋可悔。");
         const lastState = historyStack.pop();
         currentBoard = lastState.board;
         currentTurn = lastState.turn;
+        lastMove = lastState.lastMove || null;
     }
+    
+    isGameOver = false; // 解除遊戲結束狀態
     drawAllPieces();
     document.getElementById('turnInfo').innerText = "當前回合：" + (currentTurn === 'black' ? "黑方" : "白方");
     showToast("↩️ 弦音迴響，悔棋成功。");
@@ -258,6 +308,7 @@ function startLocal(isInit = false) {
     isGameOver = false;
     currentBoard = Array(15).fill(null).map(() => Array(15).fill(null));
     historyStack = [];
+    lastMove = null;
     drawAllPieces();
     document.getElementById('roomStatus').innerText = "未進入房間";
     document.getElementById('turnInfo').innerText = "當前回合：黑方";
@@ -272,12 +323,13 @@ function sweepBoard() {
 function createRoom() {
     if (!socket) return showToast("❌ 未建立連線");
     roomId = Math.floor(Math.random() * 900000 + 100000).toString();
-    socket.emit('createRoom', roomId);
+    socket.emit('createRoom', roomId); // 這裡注意：你之前的後端好像是傳字串 payload
     myColor = 'black'; 
     isPvEMode = false;
     isGameOver = false;
     currentBoard = Array(15).fill(null).map(() => Array(15).fill(null));
     historyStack = [];
+    lastMove = null;
     drawAllPieces();
     document.getElementById('roomStatus').innerText = "房間：" + roomId + " (執黑)";
     document.getElementById('roomInput').value = roomId;
@@ -294,6 +346,7 @@ function joinRoom() {
     isGameOver = false;
     currentBoard = Array(15).fill(null).map(() => Array(15).fill(null));
     historyStack = [];
+    lastMove = null;
     drawAllPieces();
     document.getElementById('roomStatus').innerText = "房間：" + roomId + " (執白)";
     showToast("🔗 已加入房間！");
@@ -307,6 +360,7 @@ function startPvE() {
     isGameOver = false;
     currentBoard = Array(15).fill(null).map(() => Array(15).fill(null));
     historyStack = [];
+    lastMove = null;
     drawAllPieces();
     document.getElementById('roomStatus').innerText = "【 機關對弈模式 】";
     document.getElementById('turnInfo').innerText = "當前回合：黑方（少俠請）";
