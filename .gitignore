@@ -1,2 +1,9 @@
 node_modules/
 .env
+.env.*
+!.env.example
+server/uploads/
+*.tar.gz
+*.pem
+*.key
+all_frontend_code.txt

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>🏮 個人主頁 - 二十八弦</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Long+Cang&family=Noto+Serif+TC:wght@500;700&display=swap');
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background: url('/cabin.jpg') no-repeat center center;
+            background-size: cover;
+            display: flex; justify-content: center; align-items: center;
+            font-family: "KaiTi", "Noto Serif TC", serif;
+        }
+
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(12, 12, 14, 0.7); z-index: 1;
+        }
+
+        .profile-container {
+            position: relative; z-index: 10;
+            background: linear-gradient(135deg, rgba(28, 28, 32, 0.9) 0%, rgba(14, 14, 16, 0.95) 100%);
+            padding: 40px 50px; border-radius: 14px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            text-align: center; width: 350px;
+        }
+
+        .title {
+            font-family: "Long Cang", "华文行楷", serif;
+            font-size: 36px; color: #f5f5f7; margin-bottom: 30px;
+        }
+
+        .avatar-preview {
+            width: 120px; height: 120px; border-radius: 50%;
+            object-fit: cover; border: 3px solid #6b1415;
+            margin-bottom: 20px; background: #2c2c2e;
+            box-shadow: 0 0 15px rgba(107, 20, 21, 0.5);
+        }
+
+        .input-group {
+            margin-bottom: 20px; text-align: left;
+        }
+
+        .input-group label {
+            display: block; color: #a1a1a6; margin-bottom: 8px; font-size: 14px;
+        }
+
+        .input-group input[type="text"] {
+            width: 100%; padding: 10px; border-radius: 6px;
+            background: #1c1c1e; border: 1px solid #48484a;
+            color: #f5f5f7; font-family: "KaiTi", serif; font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .input-group input[type="file"] {
+            color: #a1a1a6;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #2c2c2e 0%, #1c1c1e 100%);
+            border: 1px solid #48484a; color: #e5e5e7;
+            padding: 12px; border-radius: 6px; font-size: 18px;
+            cursor: pointer; width: 100%; margin-top: 10px;
+            transition: all 0.3s;
+        }
+
+        .btn.primary { background: linear-gradient(to bottom, #8f2223, #6b1415); border: none; }
+        .btn:hover { transform: translateY(-2px); filter: brightness(1.2); }
+
+        #message { margin-top: 15px; font-size: 14px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="overlay"></div>
+    <div class="profile-container">
+        <div class="title">篆刻玉牌</div>
+
+        <img id="avatarPreview" class="avatar-preview" src="/favicon.svg" alt="頭像">
+
+        <form id="profileForm">
+            <div class="input-group">
+                <label>更換頭像 (建議正方形圖片)</label>
+                <input type="file" id="avatarInput" accept="image/*" onchange="previewImage(event)">
+            </div>
+
+            <div class="input-group">
+                <label>行走江湖之名 (暱稱)</label>
+                <input type="text" id="nicknameInput" placeholder="請輸入暱稱">
+            </div>
+
+            <button type="button" class="btn primary" onclick="saveProfile()">保存玉牌</button>
+            <button type="button" class="btn" style="margin-top: 15px;" onclick="location.href='/'">返回前廳</button>
+        </form>
+        <div id="message"></div>
+    </div>
+
+    <script>
+        // 載入時將本地暫存的資料填入
+        window.onload = () => {
+            const savedNickname = localStorage.getItem('chessNickname');
+            const savedAvatar = localStorage.getItem('chessAvatar');
+            if (savedNickname) document.getElementById('nicknameInput').value = savedNickname;
+            if (savedAvatar) document.getElementById('avatarPreview').src = savedAvatar;
+        };
+
+        // 圖片預覽功能
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('avatarPreview').src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // 發送資料給後端 API
+        async function saveProfile() {
+            const username = localStorage.getItem('chessUser');
+            if (!username) return alert("請先登入！");
+
+            const nickname = document.getElementById('nicknameInput').value.trim();
+            const avatarFile = document.getElementById('avatarInput').files[0];
+            const msgDiv = document.getElementById('message');
+
+            const formData = new FormData();
+            formData.append('username', username);
+            formData.append('nickname', nickname);
+            if (avatarFile) formData.append('avatar', avatarFile);
+
+            msgDiv.style.color = '#a1a1a6';
+            msgDiv.innerText = "雕刻中...";
+
+            try {
+                const res = await fetch('/api/profile', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    msgDiv.style.color = '#4a6b5d';
+                    msgDiv.innerText = "✨ 資料保存成功！";
+                    localStorage.setItem('chessNickname', data.user.nickname);
+                    if (data.user.avatar) localStorage.setItem('chessAvatar', data.user.avatar);
+                } else {
+                    msgDiv.style.color = '#b30000';
+                    msgDiv.innerText = "❌ " + data.message;
+                }
+            } catch (error) {
+                msgDiv.style.color = '#b30000';
+                msgDiv.innerText = "❌ 無法連線至伺服器";
+            }
+        }
+    </script>
+</body>
+</html>

@@ -59,15 +59,15 @@
         }
 
         @keyframes meteorFade {
-            0% { 
-                opacity: 1; 
-                transform: scale(1); 
+            0% {
+                opacity: 1;
+                transform: scale(1);
             }
             10% {
                 opacity: 1;
             }
-            100% { 
-                opacity: 0; 
+            100% {
+                opacity: 0;
                 transform: scale(3) translate(10px, 15px);
             }
         }
@@ -126,51 +126,51 @@
         }
 
         /* 文字色彩全面升級為亮銀與白金 */
-        .gateway-title { 
-            font-family: "Long Cang", "华文行楷", serif; 
-            font-size: 40px; 
+        .gateway-title {
+            font-family: "Long Cang", "华文行楷", serif;
+            font-size: 40px;
             color: #f5f5f7; /* 蘋果級純淨冷銀 */
-            margin-bottom: 5px; 
+            margin-bottom: 5px;
             text-shadow: 0 2px 4px rgba(0,0,0,0.6);
         }
-        .gateway-subtitle { 
-            font-family: "KaiTi", serif; 
-            font-size: 16px; 
+        .gateway-subtitle {
+            font-family: "KaiTi", serif;
+            font-size: 16px;
             color: #a1a1a6; /* 高級暗灰襯托 */
-            margin-bottom: 35px; 
-            letter-spacing: 3px; 
+            margin-bottom: 35px;
+            letter-spacing: 3px;
         }
-        
+
         .gateway-menu { width: 100%; display: flex; flex-direction: column; gap: 16px; }
-        
+
         /* 按鈕改造為黑鈦合金質感 */
-        .gateway-btn { 
-            background: linear-gradient(135deg, #2c2c2e 0%, #1c1c1e 100%); 
-            border: 1px solid #48484a; 
+        .gateway-btn {
+            background: linear-gradient(135deg, #2c2c2e 0%, #1c1c1e 100%);
+            border: 1px solid #48484a;
             color: #e5e5e7; /* 冷銀白 */
-            padding: 14px; 
-            border-radius: 6px; 
-            font-family: "Long Cang", "KaiTi", serif; 
-            font-size: 22px; 
-            cursor: pointer; 
+            padding: 14px;
+            border-radius: 6px;
+            font-family: "Long Cang", "KaiTi", serif;
+            font-size: 22px;
+            cursor: pointer;
             box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1); 
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
         }
         /* 懸停解鎖極光白金反光，科技感拉滿 */
-        .gateway-btn:hover { 
-            background: #f5f5f7; 
-            color: #1c1c1e; 
-            border-color: #ffffff; 
+        .gateway-btn:hover {
+            background: #f5f5f7;
+            color: #1c1c1e;
+            border-color: #ffffff;
             transform: translateY(-1px);
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.35); 
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.35);
         }
-        
+
         .gateway-user-badge { position: absolute; top: 15px; right: 20px; font-family: "KaiTi", serif; font-size: 14px; color: #aeaeae; }
         .logout-link { color: #ff453a; cursor: pointer; border-bottom: 1px dashed #ff453a; margin-left: 5px; }
 
         .diary-box { text-align: left; font-family: "KaiTi", serif; color: #e5e5e7; line-height: 1.8; font-size: 16px; max-height: 380px; overflow-y: auto; }
         .diary-p { text-indent: 2em; margin-bottom: 15px; }
-        
+
         .diary-footer { margin-top: 25px; border-top: 1px dashed #48484a; padding-top: 15px; text-align: right; font-size: 14px; color: #a1a1a6; width: 100%; }
         .qq-link { color: #ff453a; font-weight: bold; text-decoration: none; border-bottom: 1px solid #ff453a; }
     </style>
@@ -189,6 +189,7 @@
         <button class="gateway-btn" onclick="location.href='/game.html'">🏮 棋坊 ． 對局中國象棋</button>
         <button class="gateway-btn" onclick="location.href='/gomoku.html'">🏮 棋坊 ． 對局五子棋</button>
         <button class="gateway-btn" onclick="showDiary(true)">📜 日誌 ． 尚未完成的事</button>
+        <button class="gateway-btn" onclick="location.href='/profile.html'">🪪 檔案 ． 篆刻個人玉牌</button>
     </div>
 </div>
 
@@ -204,18 +205,18 @@
 
 <script>
     const trailContainer = document.getElementById('meteor-trail-container');
-    
+
     let lastX = 0;
     let lastY = 0;
-    const DISTANCE_THRESHOLD = 8; 
+    const DISTANCE_THRESHOLD = 8;
 
     document.addEventListener('mousemove', (e) => {
         if (!trailContainer) return;
-        
+
         const currentX = e.clientX;
         const currentY = e.clientY;
         const dist = Math.sqrt(Math.pow(currentX - lastX, 2) + Math.pow(currentY - lastY, 2));
-        
+
         if (dist > DISTANCE_THRESHOLD) {
             createMeteorParticle(currentX, currentY);
             lastX = currentX;
@@ -228,9 +229,9 @@
         particle.className = 'meteor-particle';
         particle.style.left = (x - 1.5) + 'px';
         particle.style.top = (y - 1.5) + 'px';
-        
+
         trailContainer.appendChild(particle);
-        
+
         particle.addEventListener('animationend', () => {
             particle.remove();
         });
@@ -239,17 +240,17 @@
     function initParticles() {
         const container = document.getElementById('particles-container');
         if (!container) return;
-        const particleCount = 20; 
+        const particleCount = 20;
 
         for (let i = 0; i < particleCount; i++) {
             const particle = document.createElement('div');
             particle.className = 'particle';
-            const size = Math.random() * 3 + 2; 
+            const size = Math.random() * 3 + 2;
             particle.style.width = size + 'px';
             particle.style.height = size + 'px';
             particle.style.left = Math.random() * 100 + 'vw';
             particle.style.top = Math.random() * 100 + 'vh';
-            
+
             particle.style.animationDelay = Math.random() * 10 + 's';
             particle.style.animationDuration = Math.random() * 20 + 10 + 's, ' + (Math.random() * 2 + 2) + 's';
 
@@ -278,7 +279,7 @@
 
     window.onload = () => {
         updateBadge();
-        initParticles(); 
+        initParticles();
     };
 </script>
 </body>
